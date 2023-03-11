@@ -38,7 +38,7 @@ use std::io::{self, prelude::*};
 
 // use reqwest::header;
 use std::env;
-
+use mime_guess;
 
 use serde::{Serialize, Deserialize};
 use spinners::{Spinner, Spinners};
@@ -84,36 +84,12 @@ struct TelegramResponseDocument {
 
 #[derive(Debug, Deserialize, Serialize)]
 struct TelegramResult {
-    message_id: i64,
-    from: TelegramUser,
-    chat: TelegramChat,
-    date: i64,
     document: TelegramDocument,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct TelegramUser {
-    id: i64,
-    is_bot: bool,
-    first_name: String,
-    username: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct TelegramChat {
-    id: i64,
-    first_name: String,
-    username: String,
-    r#type: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 struct TelegramDocument {
-    file_name: String,
-    mime_type: String,
     file_id: String,
-    file_unique_id: String,
-    file_size: i64,
 }
 
 // Get file API structs
@@ -192,48 +168,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     // ===== UPLOADING
+    // TODO: make uploading with progress
     // Create a multipart form with a document parameter containing the binary file
-    let form = Form::new()
+    let mime_type = mime_guess::from_path(&filename).first_or_octet_stream();
+        let form = Form::new()
         .part(
             "document",
             Part::bytes(contents)
-            // Part::stream_with_length(contents, size)
-                .file_name("filename.bin") // TODO: preserve the file name
-                .mime_str("application/octet-stream")?,
+                .file_name(filename) 
+                .mime_str(mime_type.essence_str())?,
         );
-
-    // TODO: make uploading with progress
-       // read file body stream
-    // let stream = FramedRead::new(file, BytesCodec::new());
-    // let file_body = Body::wrap_stream(stream);
-    //
-    // //make form part of file
-    // let some_file = Part::bytes(contents)
-    //     .file_name(filename)
-    //     .mime_str("text/plain")?;
-    //
-    // //create the multipart form
-    // let form = multipart::Form::new()
-    //     .text("username", "seanmonstar")
-    //     .text("password", "secret")
-    //     .part("file", some_file);
-
-    // upload with progress
-    // let size = file.metadata().map(|m| m.len()).unwrap_or(0);
-    // let length = file.metadata()?.len();
-
-    // let progress = |uploaded: u64| {
-    //     let percent = 100.0 * (uploaded as f64) / (size as f64);
-    //     print!("\rUploading {:.2}%", percent);
-    //     io::stdout().flush().ok();
-    // };
-    // let b = Body::wrap_read_with_callback(file, progress);
-    // let part = reqwest::blocking::multipart::Part::stream(Body::wrap_read_with_callback(some_file, progress));
-    // let part = reqwest::blocking::multipart::Part::stream_with_length(Body::wrap_read_with_callback(some_file, progress), length).file_name(filename);
-    // let part = reqwest::multipart::Part::stream_with_length(Body::wrap_read_with_callback(some_file, progress), length).file_name(filename);
-    // let part = Part::stream_with_length(Body::wrap_read(file), size);
-    // let form = Form::new().part("document", part);
-
 
     // start loading 
     let loading_str = format!("{}", "Uploading...".green());
@@ -246,30 +190,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .multipart(form)
         .send()?;
 
-
     // stop loading
     sp.stop_with_message("".to_string());
 
-    // println!("{}", response.text()?);
-    // println!("{}", serde_json::to_string_pretty(&response.text()?)?);
-
-    // print status code
-    // println!("{}", response.status());
-    // check the status code
-    // if !&response.status().is_success() {
-    //     println!("{}", "Uploading error".red());
-    //     // pretty print json response
-    //     // let res: Value = serde_json::from_str(&response.text()?)?;
-    //     println!("{}", serde_json::to_string_pretty(&response.text()?)?);
-    //
-    //     // TODO:get error from description from response
-    //     // let result: Result<TelegramResponseDocument, serde_json::Error> = serde_json::from_str(&response.text()?);
-    //     return Ok(());
-    // }
+    let text = response.text()?.to_string();
+    println!("{}", &text);
 
     // parse the response and get the file_id
     let mut file_id = String::new();
-    let result: Result<TelegramResponseDocument, serde_json::Error> = serde_json::from_str(&response.text()?.to_string());
+    let result: Result<TelegramResponseDocument, serde_json::Error> = serde_json::from_str(&text);
     match result {
         Ok(r) => {
             if !r.ok {
