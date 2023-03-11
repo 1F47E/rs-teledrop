@@ -15,12 +15,16 @@ Teledrop is a command-line interface (CLI) tool that allows you to upload files 
 
 Usage:
 
-To use Teledrop, simply open your terminal and enter the following command: teledrop /path/to/your/file. This will upload the file to the Telegram servers and return a link to share with others.
+To use Teledrop, simply open your terminal and enter the following command: 
+
+teledrop /path/to/your/file
+
+This will upload the file to the Telegram servers via sending a file as a document to the chat id you provided and return a link to download.
 
 
 Limitations:
 
-Teledrop is currently limited to files that are 20MB or smaller. If you try to upload a larger file, you will receive an error message.
+Teledrop is currently limited to files that are 20MB or smaller. 
 The download link will be active for 1 hour only.
 
 
@@ -39,7 +43,7 @@ chat_id = '123456789'
 
 License:
 
-Teledrop is released under the MIT license. See LICENSE for details.
+Teledrop is released under the MIT license.
 
 TODO:
 - [ ] add uploading progress bar
