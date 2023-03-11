@@ -46,5 +46,5 @@ License:
 Teledrop is released under the MIT license.
 
 TODO:
-- [ ] add uploading progress bar
+- [x] add uploading progress bar
 - [ ] get fresh download link from the file id
