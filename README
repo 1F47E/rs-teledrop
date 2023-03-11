@@ -1,0 +1,46 @@
+
+
+       _       _          _                 
+      | |     | |        | |                
+      | |_ ___| | ___  __| |_ __ ___  _ __  
+      | __/ _ \ |/ _ \/ _` | '__/ _ \| '_ \ 
+      | ||  __/ |  __/ (_| | | | (_) | |_) |
+       \__\___|_|\___|\__,_|_|  \___/| .__/ 
+                                     | |    
+                                     |_|    
+
+
+
+Teledrop is a command-line interface (CLI) tool that allows you to upload files up to 20MB to the Telegram servers and gives you a link to to download a file.
+
+Usage:
+
+To use Teledrop, simply open your terminal and enter the following command: teledrop /path/to/your/file. This will upload the file to the Telegram servers and return a link to share with others.
+
+
+Limitations:
+
+Teledrop is currently limited to files that are 20MB or smaller. If you try to upload a larger file, you will receive an error message.
+The download link will be active for 1 hour only.
+
+
+Security:
+
+Teledrop uses Telegram's secure servers to upload your files. However, keep in mind that anyone with access to the download link can download the file and will also have access to your bot token. Therefore, it is recommended to only use Teledrop for private purposes and to only share the link with trusted individuals.
+
+
+Config:
+
+Config file should be found at:
+MacOS: "/Users/user/Library/Application Support/rs.teledrop/config.toml"
+config example:
+bot_token = '123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
+chat_id = '123456789'
+
+License:
+
+Teledrop is released under the MIT license. See LICENSE for details.
+
+TODO:
+- [ ] add uploading progress bar
+- [ ] get fresh download link from the file id
