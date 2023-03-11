@@ -18,9 +18,11 @@
 // Usage: teledrop filename
 //
 // config file should be found at:
-// MacOS: "/Users/user/Library/Application Support/rs.teledrop/teledrop.toml"
-//
-//
+// MacOS: "/Users/user/Library/Application Support/rs.teledrop/config.toml"
+// config example:
+// 
+// bot_token = '123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
+// chat_id = '123456789'
 //
 use reqwest::blocking::multipart::{Form, Part};
 // use reqwest::multipart::{Form, Part};
@@ -48,7 +50,7 @@ const CONFIG_NAME: &str = "config";
 const API_URL_BASE: &str = "https://api.telegram.org/bot";
 const API_SEND_DOCUMENT: &str = "/sendDocument";
 const API_GET_FILE: &str = "/getFile";
-
+const FILE_SIZE_LIMMIT: u64 = 20_000_000;
 // config file 
 #[derive(Default, Debug, Serialize, Deserialize)]
 struct Config {
@@ -149,10 +151,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     // check if bot_token and chat_id exists in config
     if cfg.bot_token == "" {
-        println!("{}", "bot_token is missing in config file".red());
+        println!("{}", "Config param bot_token is missing".red());
     }
     if cfg.chat_id == "" {
-        println!("{}", "chat_id is missing in config file".red());
+        println!("{}", "Config param chat_id is missing".red());
     }
     if cfg.bot_token == "" || cfg.chat_id == "" {
         // print config file path
@@ -170,15 +172,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let filename = filename_opt.unwrap();
-    let file_opt = File::open(filename);
+    let file_opt = File::open(&filename);
     if file_opt.is_err() {
         println!("{}", "File not found".red());
         return Ok(());
     }
     let mut file = file_opt.unwrap();
     let size = file.metadata().map(|m| m.len()).unwrap_or(0);
-    if size > 20_000_000 {
-        println!("{}", "File size is too big. Max allowed is 20Mb".red());
+    if size > FILE_SIZE_LIMMIT {
+        let size_mb = size as f64 / 1_000_000.0;
+        println!("{} {}{}", "File size is too big. Max allowed is".red(), size_mb.to_string().red(), "Mb".red());
         return Ok(());
     }
 
@@ -195,7 +198,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "document",
             Part::bytes(contents)
             // Part::stream_with_length(contents, size)
-                .file_name("filename.bin")
+                .file_name("filename.bin") // TODO: preserve the file name
                 .mime_str("application/octet-stream")?,
         );
 
@@ -285,7 +288,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    // get file path via API call
+    // ===== GET FILE PATH
     let req_get_file = RequestGetFile {
         file_id: file_id,
     };
@@ -301,7 +304,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
     }
-    // make a get file request to API_URL_GET_FILE
+    // make a get file request 
     let mut headers = header::HeaderMap::new();
     headers.insert("Content-Type", "application/json".parse().unwrap());
 
