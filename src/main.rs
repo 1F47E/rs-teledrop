@@ -1,29 +1,26 @@
-//
-//
-//       _       _          _
-//      | |     | |        | |
-//      | |_ ___| | ___  __| |_ __ ___  _ __
-//      | __/ _ \ |/ _ \/ _` | '__/ _ \| '_ \
-//      | ||  __/ |  __/ (_| | | | (_) | |_) |
-//       \__\___|_|\___|\__,_|_|  \___/| .__/
-//                                     | |
-//                                     |_|
-//
-//
-//
-// Author: Kaspar Industries
-// License: MIT
-// Description: CLI for Uploading files via telegram
-// Dependencies: reqwest, serde, serde_json, confy, dirs, spinners, colored
-// Usage: teledrop filename
-//
-// config file should be found at:
-// MacOS: "/Users/user/Library/Application Support/rs.teledrop/config.toml"
-// config example:
-//
-// bot_token = '123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
-// chat_id = '123456789'
-//
+///
+///
+///       _       _          _
+///      | |     | |        | |
+///      | |_ ___| | ___  __| |_ __ ___  _ __
+///      | __/ _ \ |/ _ \/ _` | '__/ _ \| '_ \
+///      | ||  __/ |  __/ (_| | | | (_) | |_) |
+///       \__\___|_|\___|\__,_|_|  \___/| .__/
+///                                     | |
+///                                     |_|
+///
+///
+///
+/// Description: CLI for Uploading files via telegram bot API
+/// Usage: teledrop filename
+///
+/// config file should be found at:
+/// MacOS: "/Users/user/Library/Application Support/rs.teledrop/config.toml"
+/// config example:
+///
+/// bot_token = '123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11'
+/// chat_id = '123456789'
+///
 
 
 use mime_guess;
@@ -121,8 +118,7 @@ struct FileUploadResult {
 /// Use this method to send general files. On success, the sent Message is returned. 
 /// Bots can currently send files of any type of up to 50 MB in size, this limit may be changed in the future.
 /// Because id getFile limit is 20 MB, this is set as the limit for the file size
-async fn api_upload_document(filename: &str, url: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let client = Client::new();
+async fn api_upload_document(client: &Client, filename: &str, url: &str) -> Result<String, Box<dyn std::error::Error>> {
     let file = File::open(filename).await?;
 
     let file_path = Path::new(filename);
@@ -216,9 +212,8 @@ async fn api_upload_document(filename: &str, url: &str) -> Result<String, Box<dy
 /// where <file_path> is taken from the response. 
 /// It is guaranteed that the link will be valid for at least 1 hour. 
 /// When the link expires, a new one can be requested by calling getFile again.
-async fn api_get_file_path(file_id: &str, url: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn api_get_file_path(client: &Client, file_id: &str, url: &str) -> Result<String, Box<dyn std::error::Error>> {
 
-    let client = Client::new();
     let request = RequestGetFile {
         file_id: file_id.to_string(),
     };
@@ -292,10 +287,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let filename = filename_opt.unwrap();
 
+    // create API client
+    let client = Client::new();
 
     // ===== UPLOAD FILE
     let url = cfg.api_url_send_document();
-    let upload_res = api_upload_document(&filename, &url);
+    let upload_res = api_upload_document(&client, &filename, &url);
     let file_id = tokio::runtime::Runtime::new().unwrap().block_on(upload_res).unwrap();
     // create an empty spinner and stop imidiately printing the file_id
     let mut sp = Spinner::new(Spinners::Dots12, "".into());
@@ -309,7 +306,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     sp = Spinner::new(Spinners::Dots12, loading_str.into());
     // do API call
     let api_file_path = cfg.api_url_get_file();
-    let file_path_res = api_get_file_path(&file_id, &api_file_path);
+    let file_path_res = api_get_file_path(&client, &file_id, &api_file_path);
     let file_path = tokio::runtime::Runtime::new().unwrap().block_on(file_path_res).unwrap();
     let file_url = cfg.api_url_file_url(file_path);
     // stop the spinner and print the URL
